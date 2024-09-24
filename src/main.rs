@@ -16,7 +16,7 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, _ready: Ready) {
-        println!("Bot is ready");
+        println!("Bot is ready!!!");
 
         let guild_id = GuildId::new(
             env::var("GUILD_ID")
