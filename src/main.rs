@@ -1,4 +1,5 @@
 mod commands;
+mod tournament_state;
 
 use dotenv::dotenv;
 use std::env;
@@ -25,15 +26,20 @@ impl EventHandler for Handler {
                 .expect("GUILD_ID must be an integer"),
         );
 
-        let commands = guild_id
-            .set_commands(&ctx.http, vec![commands::id::register()])
+        let _commands = guild_id
+            .set_commands(
+                &ctx.http,
+                vec![
+                    commands::id::register(),
+                    commands::tournament::register_start(),
+                    commands::tournament::register_info(),
+                ],
+            )
             .await;
-
-        println!("I now have the following guild slash commands: {commands:#?}");
     }
 
     async fn message(&self, ctx: Context, msg: Message) {
-        println!("Incomming data =>  msg: {msg:?}");
+        println!("Incomming data => msg.content: {}", msg.content);
 
         if msg.content == "!ping" {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
@@ -44,10 +50,13 @@ impl EventHandler for Handler {
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
-            println!("Received command interaction: {command:#?}");
+            let command_name = command.data.name.as_str();
+            println!("Received command interaction: {command_name}");
 
-            let content: Option<String> = match command.data.name.as_str() {
+            let content: Option<String> = match command_name {
                 "id" => Some(commands::id::run(&command.data.options())),
+                "start" => Some(commands::tournament::run_start(&command.data.options())),
+                "info" => Some(commands::tournament::run_info()),
                 _ => Some("not implemented :(".to_string()),
             };
 
