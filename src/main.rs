@@ -33,6 +33,7 @@ impl EventHandler for Handler {
                     commands::id::register(),
                     commands::tournament::register_start(),
                     commands::tournament::register_info(),
+                    commands::tournament::register_join(),
                 ],
             )
             .await;
@@ -51,12 +52,13 @@ impl EventHandler for Handler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::Command(command) = interaction {
             let command_name = command.data.name.as_str();
-            println!("Received command interaction: {command_name}");
+            println!("Received command interaction: {:?}", command.user);
 
             let content: Option<String> = match command_name {
                 "id" => Some(commands::id::run(&command.data.options())),
                 "start" => Some(commands::tournament::run_start(&command.data.options())),
                 "info" => Some(commands::tournament::run_info()),
+                "join" => Some(commands::tournament::run_join(&command.user)),
                 _ => Some("not implemented :(".to_string()),
             };
 

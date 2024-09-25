@@ -1,3 +1,5 @@
+pub mod utils;
+
 use lazy_static::lazy_static;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
@@ -21,8 +23,8 @@ pub enum MatchFormat {
     BO3,
     BO5,
 }
-
-struct Tournament {
+#[derive(Clone)]
+pub struct Tournament {
     status: TournamentStatus,
     title: String,
     match_format: MatchFormat,
@@ -30,20 +32,25 @@ struct Tournament {
     registrations: Registration,
 }
 
+#[derive(Clone)]
+
 pub struct Player {
     id: String,
     name: String,
 }
+#[derive(Clone)]
 
 pub struct TeamMember {
     player: Player,
     team_id: String,
 }
+#[derive(Clone)]
 
 pub struct Team {
     id: String,
     members: Vec<TeamMember>,
 }
+#[derive(Clone)]
 
 pub struct Registration {
     status: RegistrationStatus,
@@ -63,32 +70,40 @@ lazy_static! {
     }));
 }
 
-pub fn init_tournament(title: String) -> Arc<Mutex<Tournament>> {
+pub fn init_tournament(title: String, format_number: u8) -> Arc<Mutex<Tournament>> {
     let mut tournament = TOURNAMENT.lock().unwrap();
     tournament.status = TournamentStatus::Annonce;
     tournament.title = title;
     tournament.registrations.status = RegistrationStatus::Open;
+    tournament.match_format = utils::parse_tournament_format(format_number);
     TOURNAMENT.clone()
 }
 
-pub fn get_tournament() -> Result<Arc<Mutex<Tournament>>, Box<dyn Error>> {
+pub fn get_tournament() -> Result<Tournament, Box<dyn Error>> {
     let current_tournament_status = get_tournament_status();
+
+    let tournament_guard = TOURNAMENT.lock().unwrap();
 
     match current_tournament_status {
         Err(e) => Err(e.into()),
-        _ => Ok(TOURNAMENT.clone()),
+        _ => Ok(tournament_guard.clone()),
     }
 }
 
 pub fn get_tournament_status() -> Result<String, Box<dyn Error>> {
     let tournament = TOURNAMENT.lock().unwrap();
     match tournament.status {
-        TournamentStatus::Annonce => Ok(String::from("Tournament in announsed")),
-        TournamentStatus::Started => Ok(String::from("Tournament in about to start")),
-        TournamentStatus::InProgress => Ok(String::from("Tournament in progress")),
-        TournamentStatus::Finished => Ok(String::from("Tournament finished")),
+        TournamentStatus::Annonce => Ok(String::from("is announsed")),
+        TournamentStatus::Started => Ok(String::from("is about to start")),
+        TournamentStatus::InProgress => Ok(String::from("in progress")),
+        TournamentStatus::Finished => Ok(String::from("is finished")),
         TournamentStatus::Closed => Err("No Tournament at this time".into()),
     }
+}
+
+pub fn get_tournament_title() -> String {
+    let tournament = TOURNAMENT.lock().unwrap();
+    tournament.title.clone()
 }
 
 pub fn reset_tournament() {
